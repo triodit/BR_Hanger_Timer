@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 
 # File to store persistent data
 DATA_FILE = "event_tracker.json"
+ICON_PATH = "icon.ico"  # Default to .ico, fallback to .png
+ICON_PNG_PATH = "icon.png"  # PNG fallback
 
 # **New Timer System**
 TOTAL_CYCLE_DURATION = 3 * 60 * 60 + 5 * 60  # 3 hours 5 minutes (11,100 seconds)
@@ -159,8 +161,15 @@ def update_display():
 
 # **Create UI**
 root = tk.Tk()
-root.title("Event Tracker")
-root.geometry("400x300")
+root.title("Blackrock Ex-Hanger Timer")
+root.geometry("400x260")
+
+# Set icon
+if os.path.exists(ICON_PATH):
+    root.iconbitmap(ICON_PATH)
+elif os.path.exists(ICON_PNG_PATH):
+    icon_img = tk.PhotoImage(file=ICON_PNG_PATH)
+    root.iconphoto(True, icon_img)
 
 # Labels
 phase_label = tk.Label(root, text="", font=("Arial", 16))
@@ -184,27 +193,23 @@ for i in range(5):
 time_label = tk.Label(root, text="", font=("Arial", 14))
 time_label.pack(pady=5)
 
-# Frame to hold manual phase selection options in one row
+# **Manual Configuration Buttons**
 manual_frame = tk.Frame(root)
 manual_frame.pack(pady=10)
 
-# **Dropdown for selecting phase**
 phase_var = tk.StringVar(root)
 phase_var.set("Red")
 phase_dropdown = tk.OptionMenu(manual_frame, phase_var, "Red", "Green", "Black")
 phase_dropdown.grid(row=0, column=0, padx=5)
 
-# **Dropdown for selecting state**
 state_var = tk.StringVar(root)
 state_var.set("5")
 state_dropdown = tk.OptionMenu(manual_frame, state_var, "5", "4", "3", "2", "1")
 state_dropdown.grid(row=0, column=1, padx=5)
 
-# **Button to manually set the phase and state**
 manual_set_button = tk.Button(manual_frame, text="Set", command=set_manual_state, bg="blue", fg="white")
 manual_set_button.grid(row=0, column=2, padx=5)
 
-# **Reset button**
 reset_button = tk.Button(root, text="Reset", command=reset, bg="gray", fg="white")
 reset_button.pack(pady=20)
 
