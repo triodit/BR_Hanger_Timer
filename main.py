@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 
 # File to store persistent data
 DATA_FILE = "event_tracker.json"
+ICON_PATH = "icon.ico"  # Default to .ico, fallback to .png
+ICON_PNG_PATH = "icon.png"  # PNG fallback
 
 # **New Timer System**
 TOTAL_CYCLE_DURATION = 3 * 60 * 60 + 5 * 60  # 3 hours 5 minutes (11,100 seconds)
@@ -80,7 +82,7 @@ def update_state():
             current_state = state
             return
 
-# Manually set phase and state
+# **Manually set phase and state**
 def set_manual_state():
     global init_time
 
@@ -108,17 +110,14 @@ def set_manual_state():
 def get_adjusted_display_time(remaining_time):
     if current_phase == "Red":
         adjusted_time = remaining_time - (1 * 60 * 60 + 5 * 60)  # Offset by -1 hour 5 min
-        if adjusted_time < 0:
-            adjusted_time = 0  # Avoid negative display times
     elif current_phase == "Green":
         adjusted_time = remaining_time - (5 * 60)  # Offset by -5 minutes
-        if adjusted_time < 0:
-            adjusted_time = 0
     else:  # Black (No adjustment)
         adjusted_time = remaining_time
-    return adjusted_time
 
-# **Update UI Display Text**
+    return max(adjusted_time, 0)  # Ensure time never goes negative
+
+# **Get User-Friendly Display Text**
 def get_display_text():
     if current_phase == "Red":
         return f"Hanger Locked {current_state}"
@@ -127,7 +126,7 @@ def get_display_text():
     else:
         return "Hanger Gassed"  # Black phase
 
-# Update the UI dynamically (Now reads from config file every update)
+# **Update Display**
 def update_display():
     update_state()  # Get current phase, state, and remaining time
 
@@ -137,10 +136,6 @@ def update_display():
     # Adjust Display Time
     adjusted_display_time = get_adjusted_display_time(remaining_time)
 
-    # Ensure remaining time never goes negative
-    if adjusted_display_time < 0:
-        adjusted_display_time = 0
-
     remaining_phase = str(timedelta(seconds=int(adjusted_display_time)))
 
     phase_label.config(text=get_display_text(), fg="red" if current_phase == "Red" else "green" if current_phase == "Green" else "black")
@@ -148,15 +143,23 @@ def update_display():
 
     root.after(1000, update_display)  # Refresh every second
 
-# Create UI
+# **Create UI**
 root = tk.Tk()
-root.title("Event Tracker")
-root.geometry("400x250")
+root.title("Blackrock Ex-Hanger Timer")
+root.geometry("400x240")
+
+# Set icon
+if os.path.exists(ICON_PATH):
+    root.iconbitmap(ICON_PATH)
+elif os.path.exists(ICON_PNG_PATH):
+    icon_img = tk.PhotoImage(file=ICON_PNG_PATH)
+    root.iconphoto(True, icon_img)
 
 # Labels
 phase_label = tk.Label(root, text="", font=("Arial", 16))
 phase_label.pack(pady=10)
 
+# Time Remaining Label
 time_label = tk.Label(root, text="", font=("Arial", 14))
 time_label.pack(pady=5)
 
@@ -164,28 +167,31 @@ time_label.pack(pady=5)
 manual_frame = tk.Frame(root)
 manual_frame.pack(pady=10)
 
-# Dropdown for selecting phase
+# **Dropdown for selecting phase**
 phase_var = tk.StringVar(root)
-phase_var.set("Red")  # Default value
+phase_var.set("Red")
 phase_dropdown = tk.OptionMenu(manual_frame, phase_var, "Red", "Green", "Black")
 phase_dropdown.grid(row=0, column=0, padx=5)
 
-# Dropdown for selecting state (Descending order)
+# **Dropdown for selecting state**
 state_var = tk.StringVar(root)
-state_var.set("5")  # Default value
+state_var.set("5")
 state_dropdown = tk.OptionMenu(manual_frame, state_var, "5", "4", "3", "2", "1")
 state_dropdown.grid(row=0, column=1, padx=5)
 
-# Button to manually set the phase and state
+# **Button to manually set the phase and state**
 manual_set_button = tk.Button(manual_frame, text="Set", command=set_manual_state, bg="blue", fg="white")
 manual_set_button.grid(row=0, column=2, padx=5)
 
-# Reset button (Now below other controls)
+# **Reset button**
 reset_button = tk.Button(root, text="Reset", command=reset, bg="gray", fg="white")
 reset_button.pack(pady=20)
 
-# Load saved state or initialize new tracking
-initialize_tracker()
+# **Version label (bottom right corner)**
+version_label = tk.Label(root, text="Ver 1.0.0 by Edgedancer", font=("Arial", 10), fg="gray")
+version_label.pack(side="bottom", anchor="se", padx=10, pady=5)
 
-update_display()  # Start UI update loop
+initialize_tracker()
+update_display()
 root.mainloop()
+
